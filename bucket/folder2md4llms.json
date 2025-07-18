@@ -31,7 +31,7 @@
         ]
     },
     "bin": [
-        ["python", "-m", "folder2md4llms.cli", "folder2md"]
+        ["python -m folder2md4llms.cli", "folder2md"]
     ],
     "post_install": [
         "Write-Host ''",
