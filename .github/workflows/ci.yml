@@ -85,6 +85,9 @@ jobs:
       run: |
         echo "::group::Testing functionality"
         
+        # Add scoop shims to PATH
+        $env:PATH = "$env:USERPROFILE\scoop\shims;$env:PATH"
+        
         # Create test directory
         New-Item -ItemType Directory -Path "test-project" -Force
         Set-Content -Path "test-project\test.py" -Value "print('Hello, World!')"
@@ -127,7 +130,7 @@ jobs:
         $start_time = Get-Date
         
         # Add scoop to path
-        $env:PATH += ";$env:USERPROFILE\scoop\shims"
+        $env:PATH = "$env:USERPROFILE\scoop\shims;$env:PATH"
         
         # Uninstall the package
         Write-Host "Uninstalling folder2md4llms..."
@@ -154,7 +157,7 @@ jobs:
         echo "::group::Testing checkver functionality"
         
         # Add scoop to path
-        $env:PATH += ";$env:USERPROFILE\scoop\shims"
+        $env:PATH = "$env:USERPROFILE\scoop\shims;$env:PATH"
         
         # Test checkver
         Write-Host "Testing version checking..."
