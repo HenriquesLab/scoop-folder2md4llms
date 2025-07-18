@@ -13,6 +13,10 @@
             "try {",
             "    python -m pip install --upgrade --force-reinstall \"folder2md4llms==$version\"",
             "    Write-Host 'Installation completed successfully!'",
+            "    # Create shim batch file",
+            "    $shimPath = \"$dir\\folder2md.cmd\"",
+            "    '@echo off' | Out-File -FilePath $shimPath -Encoding ASCII",
+            "    'python -m folder2md4llms.cli %*' | Out-File -FilePath $shimPath -Encoding ASCII -Append",
             "} catch {",
             "    Write-Host 'Installation failed. Please ensure Python and pip are properly installed.'",
             "    throw",
@@ -30,9 +34,7 @@
             "}"
         ]
     },
-    "bin": [
-        ["python -m folder2md4llms.cli", "folder2md"]
-    ],
+    "bin": "folder2md.cmd",
     "post_install": [
         "Write-Host ''",
         "Write-Host 'folder2md4llms has been installed successfully!' -ForegroundColor Green",
