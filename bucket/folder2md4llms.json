@@ -63,7 +63,8 @@
         "Write-Host 'Creating shims for folder2md command...' -ForegroundColor Yellow",
         "New-Item -ItemType Directory -Path \"$env:USERPROFILE\\scoop\\shims\" -Force -ErrorAction SilentlyContinue",
         "$shimPath = \"$env:USERPROFILE\\scoop\\shims\\folder2md.cmd\"",
-        "$shimContent = \"@echo off`r`npython -m folder2md4llms.cli %*\"",
+        "$pythonPath = \"$env:USERPROFILE\\scoop\\apps\\python\\current\\python.exe\"",
+        "$shimContent = \"@echo off`r`n`\"$pythonPath`\" -m folder2md4llms.cli %*\"",
         "$shimContent | Set-Content -Path $shimPath -Encoding ascii",
         "Write-Host \"Created shim at: $shimPath\" -ForegroundColor Green"
     ],
