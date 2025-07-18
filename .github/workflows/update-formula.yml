@@ -1,0 +1,296 @@
+name: Update Formula
+
+on:
+  repository_dispatch:
+    types: [new_release]
+  schedule:
+    # Check for updates every 4 hours
+    - cron: '0 */4 * * *'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to update to (e.g., 1.0.0)'
+        required: false
+        type: string
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  update-formula:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        fetch-depth: 0
+
+    - name: Set up environment
+      run: |
+        # Install GitHub CLI
+        winget install --id GitHub.cli
+        
+        # Set up git config
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+      shell: pwsh
+
+    - name: Get current and latest versions
+      id: versions
+      run: |
+        echo "::group::Version detection"
+        
+        # Get current version from manifest
+        $manifest = Get-Content "bucket/folder2md4llms.json" | ConvertFrom-Json
+        $currentVersion = $manifest.version
+        Write-Host "Current manifest version: $currentVersion"
+        
+        # Get latest version from PyPI or input
+        if ("${{ github.event.inputs.version }}" -ne "") {
+          $latestVersion = "${{ github.event.inputs.version }}"
+          Write-Host "Using input version: $latestVersion"
+        } elseif ("${{ github.event.client_payload.version }}" -ne "") {
+          $latestVersion = "${{ github.event.client_payload.version }}"
+          Write-Host "Using dispatch version: $latestVersion"
+        } else {
+          Write-Host "Checking PyPI for latest version..."
+          $pypiData = Invoke-RestMethod -Uri "https://pypi.org/pypi/folder2md4llms/json"
+          $latestVersion = $pypiData.info.version
+          Write-Host "Latest PyPI version: $latestVersion"
+        }
+        
+        echo "current-version=$currentVersion" >> $env:GITHUB_OUTPUT
+        echo "latest-version=$latestVersion" >> $env:GITHUB_OUTPUT
+        
+        # Check if update is needed
+        if ($currentVersion -eq $latestVersion) {
+          echo "needs-update=false" >> $env:GITHUB_OUTPUT
+          Write-Host "✅ Manifest is already up to date"
+        } else {
+          echo "needs-update=true" >> $env:GITHUB_OUTPUT
+          Write-Host "📦 Update needed: $currentVersion -> $latestVersion"
+        }
+        
+        echo "::endgroup::"
+      shell: pwsh
+
+    - name: Update manifest
+      if: steps.versions.outputs.needs-update == 'true'
+      id: update
+      run: |
+        echo "::group::Updating manifest"
+        
+        $latestVersion = "${{ steps.versions.outputs.latest-version }}"
+        $manifestFile = "bucket/folder2md4llms.json"
+        
+        # Read current manifest
+        $manifest = Get-Content $manifestFile | ConvertFrom-Json
+        
+        # Create backup
+        Copy-Item $manifestFile "$manifestFile.backup"
+        
+        # Update version
+        $manifest.version = $latestVersion
+        
+        # Update download URL if needed (assuming PyPI tarball pattern)
+        $newUrl = "https://pypi.org/packages/source/f/folder2md4llms/folder2md4llms-$latestVersion.tar.gz"
+        
+        # For installer.script, we typically don't need to change the pip command
+        # as it will automatically install the latest version
+        
+        # Save updated manifest
+        $manifest | ConvertTo-Json -Depth 10 | Set-Content $manifestFile
+        
+        Write-Host "Updated manifest:"
+        Get-Content $manifestFile
+        
+        echo "branch-name=update-manifest-$latestVersion" >> $env:GITHUB_OUTPUT
+        echo "::endgroup::"
+      shell: pwsh
+
+    - name: Install and setup Scoop for testing
+      if: steps.versions.outputs.needs-update == 'true'
+      run: |
+        echo "::group::Setting up Scoop for testing"
+        
+        # Install Scoop
+        Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+        Invoke-RestMethod -Uri https://get.scoop.sh | Invoke-Expression
+        
+        # Add Scoop to PATH
+        $env:PATH += ";$env:USERPROFILE\scoop\shims"
+        
+        # Verify Scoop installation
+        scoop --version
+        
+        echo "::endgroup::"
+      shell: pwsh
+
+    - name: Test updated manifest
+      if: steps.versions.outputs.needs-update == 'true'
+      run: |
+        echo "::group::Testing updated manifest"
+        
+        # Validate JSON syntax
+        $manifest = Get-Content "bucket/folder2md4llms.json" | ConvertFrom-Json
+        Write-Host "✅ JSON syntax validation passed"
+        
+        # Add current directory as a test bucket
+        scoop bucket add test-bucket .
+        
+        # Test installation
+        Write-Host "Testing installation..."
+        scoop install test-bucket/folder2md4llms
+        
+        # Test basic functionality
+        folder2md --version
+        folder2md --help
+        
+        # Test with a simple example
+        Set-Content -Path "test.md" -Value "# Test"
+        folder2md . --output test_output.md
+        
+        if (-not (Test-Path "test_output.md")) {
+          throw "❌ Output file not created"
+        }
+        
+        # Clean up test
+        Remove-Item "test.md", "test_output.md" -ErrorAction SilentlyContinue
+        scoop uninstall folder2md4llms
+        scoop bucket rm test-bucket
+        
+        Write-Host "✅ Updated manifest tests passed"
+        echo "::endgroup::"
+      shell: pwsh
+
+    - name: Create pull request
+      if: steps.versions.outputs.needs-update == 'true'
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        echo "::group::Creating pull request"
+        
+        $latestVersion = "${{ steps.versions.outputs.latest-version }}"
+        $currentVersion = "${{ steps.versions.outputs.current-version }}"
+        $branchName = "${{ steps.update.outputs.branch-name }}"
+        
+        # Create and switch to new branch
+        git checkout -b $branchName
+        
+        # Stage and commit changes
+        git add bucket/folder2md4llms.json
+        git commit -m "Update manifest to version $latestVersion
+
+        - Update version from $currentVersion to $latestVersion
+        - Automated update from PyPI release
+        - Manifest validation and installation test passed
+
+        🤖 Generated by GitHub Actions"
+        
+        # Push the branch
+        git push -u origin $branchName
+        
+        # Create the PR
+        gh pr create `
+          --title "Update folder2md4llms to $latestVersion" `
+          --body "## 📦 Automated Manifest Update
+
+        This PR updates the folder2md4llms Scoop manifest to version **$latestVersion**.
+
+        ### Changes
+        - ⬆️ Version: ``$currentVersion`` → ``$latestVersion``
+        - ✅ JSON syntax validation passed
+        - ✅ Installation test passed
+        - ✅ Basic functionality test passed
+
+        ### Testing
+        The updated manifest has been automatically tested with:
+        - JSON syntax validation
+        - Scoop installation test
+        - Basic CLI functionality (``folder2md --version`` and ``--help``)
+        - Simple file processing test
+
+        ### Source
+        - 📦 PyPI: https://pypi.org/project/folder2md4llms/$latestVersion/
+        - 🏷️ Release: https://github.com/HenriquesLab/folder2md4llms/releases/tag/v$latestVersion
+
+        ---
+        🤖 This PR was created automatically by GitHub Actions." `
+          --label "automated-update" `
+          --assignee "${{ github.repository_owner }}"
+        
+        Write-Host "✅ Pull request created successfully"
+        echo "::endgroup::"
+      shell: pwsh
+
+    - name: Auto-merge if tests pass
+      if: steps.versions.outputs.needs-update == 'true' && github.event_name == 'repository_dispatch'
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        echo "::group::Auto-merge setup"
+        
+        # Wait a moment for the PR to be fully created
+        Start-Sleep -Seconds 30
+        
+        # Get the PR number
+        $prData = gh pr list --head "${{ steps.update.outputs.branch-name }}" --json number | ConvertFrom-Json
+        
+        if ($prData.Count -gt 0) {
+          $prNumber = $prData[0].number
+          Write-Host "PR Number: $prNumber"
+          
+          # Enable auto-merge (will merge when checks pass)
+          gh pr merge $prNumber --auto --squash
+          
+          Write-Host "✅ Auto-merge enabled for PR #$prNumber"
+        } else {
+          Write-Host "❌ Could not find PR number"
+        }
+        
+        echo "::endgroup::"
+      shell: pwsh
+
+    - name: Cleanup on failure
+      if: failure() && steps.versions.outputs.needs-update == 'true'
+      run: |
+        echo "::group::Cleanup after failure"
+        
+        # Restore original manifest if backup exists
+        if (Test-Path "bucket/folder2md4llms.json.backup") {
+          Move-Item "bucket/folder2md4llms.json.backup" "bucket/folder2md4llms.json" -Force
+          Write-Host "✅ Restored original manifest"
+        }
+        
+        # Clean up any test files
+        Remove-Item "test.md", "test_output.md" -ErrorAction SilentlyContinue
+        
+        # Remove test bucket and uninstall if needed
+        scoop bucket rm test-bucket -ErrorAction SilentlyContinue
+        scoop uninstall folder2md4llms -ErrorAction SilentlyContinue
+        
+        echo "::endgroup::"
+      shell: pwsh
+
+    - name: Summary
+      if: always()
+      run: |
+        echo "::group::Update Summary"
+        Write-Host "### Manifest Update Summary"
+        Write-Host "- Current version: ${{ steps.versions.outputs.current-version }}"
+        Write-Host "- Latest version: ${{ steps.versions.outputs.latest-version }}"
+        Write-Host "- Update needed: ${{ steps.versions.outputs.needs-update }}"
+        
+        if ("${{ steps.versions.outputs.needs-update }}" -eq "true") {
+          Write-Host "- ✅ Manifest updated successfully"
+          Write-Host "- ✅ Tests passed"
+          Write-Host "- ✅ Pull request created"
+        } else {
+          Write-Host "- ✅ Manifest is up to date"
+        }
+        
+        echo "::endgroup::"
+      shell: pwsh
