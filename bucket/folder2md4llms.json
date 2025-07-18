@@ -57,7 +57,15 @@
         "Write-Host '  2. Run: scoop reset folder2md4llms'",
         "Write-Host '  3. Use: python -m folder2md4llms.cli instead'",
         "Write-Host ''",
-        "Write-Host 'Documentation: https://github.com/henriqueslab/folder2md4llms'"
+        "Write-Host 'Documentation: https://github.com/henriqueslab/folder2md4llms'",
+        "",
+        "# Create shims for the wrapper scripts",
+        "Write-Host 'Creating shims for folder2md command...' -ForegroundColor Yellow",
+        "New-Item -ItemType Directory -Path \"$env:USERPROFILE\\scoop\\shims\" -Force -ErrorAction SilentlyContinue",
+        "$shimPath = \"$env:USERPROFILE\\scoop\\shims\\folder2md.cmd\"",
+        "$shimContent = \"@echo off`r`npython -m folder2md4llms.cli %*\"",
+        "$shimContent | Set-Content -Path $shimPath -Encoding ascii",
+        "Write-Host \"Created shim at: $shimPath\" -ForegroundColor Green"
     ],
     "pre_uninstall": [
         "Write-Host 'Uninstalling folder2md4llms...' -ForegroundColor Yellow",
@@ -79,10 +87,6 @@
         "}",
         "",
         "Write-Host 'folder2md4llms uninstallation complete!' -ForegroundColor Green"
-    ],
-    "bin": [
-        "folder2md.cmd",
-        "folder2md.ps1"
     ],
     "checkver": {
         "url": "https://pypi.org/pypi/folder2md4llms/json",
