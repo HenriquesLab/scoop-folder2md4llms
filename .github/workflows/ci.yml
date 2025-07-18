@@ -63,9 +63,18 @@ jobs:
         # Add scoop to path
         $env:PATH += ";$env:USERPROFILE\scoop\shims"
         
+        # Install Python via scoop first (since CI doesn't have scoop python)
+        Write-Host "Installing Python via scoop..."
+        try {
+            scoop install python
+            Write-Host "Python installation completed"
+        } catch {
+            Write-Host "Python installation failed or already exists, continuing..."
+        }
+        
         # Install the package
         Write-Host "Installing folder2md4llms..."
-        scoop install ./bucket/folder2md4llms.json
+        scoop install "$(Get-Location)\bucket\folder2md4llms.json"
         
         $install_time = Get-Date
         $install_duration = ($install_time - $start_time).TotalSeconds
