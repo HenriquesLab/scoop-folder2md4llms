@@ -106,7 +106,8 @@ jobs:
         
         # Install the package directly from the manifest file
         Write-Host "Installing folder2md4llms from local manifest..."
-        scoop install ./bucket/folder2md4llms.json
+        $manifestPath = Join-Path (Get-Location) "bucket\folder2md4llms.json"
+        scoop install $manifestPath
         
         $install_time = Get-Date
         $duration = ($install_time - $start_time).TotalSeconds
