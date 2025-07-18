@@ -86,8 +86,11 @@ jobs:
         if (-not $manifest.homepage) { throw "Missing homepage field" }
         if (-not $manifest.license) { throw "Missing license field" }
         if (-not $manifest.depends) { throw "Missing depends field" }
-        if (-not $manifest.installer) { throw "Missing installer field" }
-        if (-not $manifest.bin) { throw "Missing bin field" }
+        # Check for either installer OR post_install field (this manifest uses post_install approach)
+        if (-not $manifest.installer -and -not $manifest.post_install) { 
+            throw "Missing installer or post_install field" 
+        }
+        # Note: This manifest doesn't use bin field - it creates shims via post_install scripts
         
         Write-Host "✅ Manifest JSON validation passed"
         Write-Host "Version: $($manifest.version)"
@@ -285,10 +288,10 @@ jobs:
         Remove-Item -Path "test_project" -Recurse -Force -ErrorAction SilentlyContinue
         
         # Remove test bucket
-        scoop bucket rm test-bucket -ErrorAction SilentlyContinue
+        try { scoop bucket rm test-bucket } catch { Write-Host "Test bucket not found or already removed" }
         
         # Uninstall if still installed
-        scoop uninstall folder2md4llms -ErrorAction SilentlyContinue
+        try { scoop uninstall folder2md4llms } catch { Write-Host "Package not found or already uninstalled" }
         
         Write-Host "✅ Cleanup completed"
         
