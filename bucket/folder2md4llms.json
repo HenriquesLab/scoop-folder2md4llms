@@ -30,13 +30,20 @@
             "}"
         ]
     },
-    "bin": "folder2md.bat",
-    "pre_install": [
-        "# Create wrapper batch file",
-        "Set-Content -Path \"$dir\\folder2md.bat\" -Value '@echo off' -Encoding ASCII",
-        "Add-Content -Path \"$dir\\folder2md.bat\" -Value 'python -m folder2md4llms.cli %*' -Encoding ASCII"
-    ],
     "post_install": [
+        "# Create shim for folder2md command after pip installation",
+        "$pythonScripts = \"$env:USERPROFILE\\scoop\\apps\\python\\current\\Scripts\"",
+        "$folder2mdExe = \"$pythonScripts\\folder2md.exe\"",
+        "if (Test-Path $folder2mdExe) {",
+        "    Write-Host \"Found folder2md.exe at: $folder2mdExe\"",
+        "    # Create shim using scoop shim command",
+        "    & \"$env:USERPROFILE\\scoop\\apps\\scoop\\current\\bin\\scoop.ps1\" shim add folder2md \"$folder2mdExe\"",
+        "    Write-Host \"Created shim for folder2md command\"",
+        "} else {",
+        "    Write-Host \"Warning: folder2md.exe not found in Scripts directory\"",
+        "    Write-Host \"You may need to use: python -m folder2md4llms.cli\"",
+        "}",
+        "",
         "Write-Host ''",
         "Write-Host 'folder2md4llms has been installed successfully!' -ForegroundColor Green",
         "Write-Host ''",
