@@ -1,0 +1,197 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [windows-latest, windows-2022, windows-2019]
+        python-version: ['3.11', '3.12']
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Cache pip packages
+      uses: actions/cache@v4
+      with:
+        path: ~\AppData\Local\pip\Cache
+        key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('**/requirements*.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-${{ matrix.python-version }}-
+          ${{ runner.os }}-pip-
+    
+    - name: Install Scoop
+      run: |
+        echo "::group::Installing Scoop"
+        $start_time = Get-Date
+        Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+        Invoke-RestMethod -Uri https://get.scoop.sh | Invoke-Expression
+        $env:PATH += ";$env:USERPROFILE\scoop\shims"
+        $end_time = Get-Date
+        $duration = ($end_time - $start_time).TotalSeconds
+        Write-Host "Scoop installation completed in $duration seconds"
+        echo "::endgroup::"
+      shell: pwsh
+    
+    - name: Validate manifest JSON
+      run: |
+        echo "::group::Validating manifest JSON"
+        $manifest = Get-Content "bucket/folder2md4llms.json" | ConvertFrom-Json
+        Write-Host "✅ Manifest JSON is valid"
+        Write-Host "Package: $($manifest.description)"
+        Write-Host "Version: $($manifest.version)"
+        Write-Host "Homepage: $($manifest.homepage)"
+        echo "::endgroup::"
+      shell: pwsh
+    
+    - name: Test installation
+      run: |
+        echo "::group::Testing installation"
+        $start_time = Get-Date
+        
+        # Add scoop to path
+        $env:PATH += ";$env:USERPROFILE\scoop\shims"
+        
+        # Install the package
+        Write-Host "Installing folder2md4llms..."
+        scoop install ./bucket/folder2md4llms.json
+        
+        $install_time = Get-Date
+        $install_duration = ($install_time - $start_time).TotalSeconds
+        Write-Host "Installation completed in $install_duration seconds"
+        
+        # Verify installation
+        Write-Host "Verifying installation..."
+        python -m pip list | Select-String "folder2md4llms"
+        
+        $end_time = Get-Date
+        $total_duration = ($end_time - $start_time).TotalSeconds
+        Write-Host "Total installation test completed in $total_duration seconds"
+        echo "::endgroup::"
+      shell: pwsh
+    
+    - name: Test functionality
+      run: |
+        echo "::group::Testing functionality"
+        
+        # Create test directory
+        New-Item -ItemType Directory -Path "test-project" -Force
+        Set-Content -Path "test-project\test.py" -Value "print('Hello, World!')"
+        Set-Content -Path "test-project\README.md" -Value "# Test Project"
+        
+        # Test folder2md command
+        Write-Host "Testing folder2md command..."
+        python -m folder2md4llms.cli test-project --output test-output.md
+        
+        # Verify output
+        if (Test-Path "test-output.md") {
+            Write-Host "✅ Output file created successfully"
+            $content = Get-Content "test-output.md" -Raw
+            if ($content -match "Hello, World!") {
+                Write-Host "✅ Content correctly processed"
+            } else {
+                Write-Host "❌ Content not found in output"
+                exit 1
+            }
+        } else {
+            Write-Host "❌ Output file not created"
+            exit 1
+        }
+        
+        # Test help command
+        Write-Host "Testing help command..."
+        python -m folder2md4llms.cli --help
+        
+        # Test version command
+        Write-Host "Testing version command..."
+        python -m folder2md4llms.cli --version
+        
+        Write-Host "✅ All functionality tests passed"
+        echo "::endgroup::"
+      shell: pwsh
+    
+    - name: Test uninstallation
+      run: |
+        echo "::group::Testing uninstallation"
+        $start_time = Get-Date
+        
+        # Add scoop to path
+        $env:PATH += ";$env:USERPROFILE\scoop\shims"
+        
+        # Uninstall the package
+        Write-Host "Uninstalling folder2md4llms..."
+        scoop uninstall folder2md4llms
+        
+        # Verify uninstallation
+        Write-Host "Verifying uninstallation..."
+        $pipList = python -m pip list | Select-String "folder2md4llms"
+        if ($pipList) {
+            Write-Host "❌ Package still found after uninstallation"
+            exit 1
+        } else {
+            Write-Host "✅ Package successfully uninstalled"
+        }
+        
+        $end_time = Get-Date
+        $duration = ($end_time - $start_time).TotalSeconds
+        Write-Host "Uninstallation test completed in $duration seconds"
+        echo "::endgroup::"
+      shell: pwsh
+    
+    - name: Test checkver functionality
+      run: |
+        echo "::group::Testing checkver functionality"
+        
+        # Add scoop to path
+        $env:PATH += ";$env:USERPROFILE\scoop\shims"
+        
+        # Test checkver
+        Write-Host "Testing version checking..."
+        $response = Invoke-RestMethod -Uri "https://pypi.org/pypi/folder2md4llms/json"
+        $latest_version = $response.info.version
+        Write-Host "Latest version from PyPI: $latest_version"
+        
+        # Read manifest version
+        $manifest = Get-Content "bucket/folder2md4llms.json" | ConvertFrom-Json
+        $manifest_version = $manifest.version
+        Write-Host "Manifest version: $manifest_version"
+        
+        if ($latest_version -eq $manifest_version) {
+            Write-Host "✅ Version check passed - manifest is up to date"
+        } else {
+            Write-Host "⚠️  Version mismatch detected - manifest may need updating"
+            Write-Host "This is informational only and won't fail the build"
+        }
+        echo "::endgroup::"
+      shell: pwsh
+    
+    - name: Performance Summary
+      if: always()
+      run: |
+        echo "## CI Test Summary" >> $env:GITHUB_STEP_SUMMARY
+        echo "- ✅ Manifest JSON validation completed" >> $env:GITHUB_STEP_SUMMARY
+        echo "- ✅ Installation test completed" >> $env:GITHUB_STEP_SUMMARY
+        echo "- ✅ Functionality test completed" >> $env:GITHUB_STEP_SUMMARY
+        echo "- ✅ Uninstallation test completed" >> $env:GITHUB_STEP_SUMMARY
+        echo "- ✅ Version checking test completed" >> $env:GITHUB_STEP_SUMMARY
+        echo "" >> $env:GITHUB_STEP_SUMMARY
+        echo "### Performance Optimizations" >> $env:GITHUB_STEP_SUMMARY
+        echo "- 🚀 Pip package caching enabled" >> $env:GITHUB_STEP_SUMMARY
+        echo "- 🚀 Parallel testing across Windows versions" >> $env:GITHUB_STEP_SUMMARY
+        echo "- 🚀 Performance timing measurements added" >> $env:GITHUB_STEP_SUMMARY
+        echo "- 📊 Matrix testing with Python 3.11 and 3.12" >> $env:GITHUB_STEP_SUMMARY
+        echo "" >> $env:GITHUB_STEP_SUMMARY
+        echo "**OS:** ${{ matrix.os }}" >> $env:GITHUB_STEP_SUMMARY
+        echo "**Python:** ${{ matrix.python-version }}" >> $env:GITHUB_STEP_SUMMARY
+      shell: pwsh

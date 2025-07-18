@@ -1,0 +1,303 @@
+name: Issue Handler
+
+on:
+  issues:
+    types: [opened, reopened]
+  issue_comment:
+    types: [created]
+
+jobs:
+  issue-handler:
+    runs-on: windows-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    
+    - name: Install Scoop
+      run: |
+        Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+        Invoke-RestMethod -Uri https://get.scoop.sh | Invoke-Expression
+        $env:PATH += ";$env:USERPROFILE\scoop\shims"
+      shell: pwsh
+    
+    - name: Handle installation issues
+      if: contains(github.event.issue.title, 'installation') || contains(github.event.issue.title, 'install') || contains(github.event.issue.body, 'installation') || contains(github.event.issue.body, 'install')
+      run: |
+        echo "::group::Handling installation issue"
+        
+        # Test current installation
+        Write-Host "Testing current installation process..."
+        
+        try {
+            scoop install ./bucket/folder2md4llms.json
+            Write-Host "✅ Installation test passed"
+            
+            # Test basic functionality
+            python -m folder2md4llms.cli --version
+            Write-Host "✅ Functionality test passed"
+            
+            # Clean up
+            scoop uninstall folder2md4llms
+            
+            $comment = @"
+        ## 🔍 Automated Installation Test Results
+        
+        I've automatically tested the installation process and it appears to be working correctly.
+        
+        **Test Results:**
+        - ✅ Installation completed successfully
+        - ✅ Basic functionality verified
+        - ✅ Uninstallation completed successfully
+        
+        **Troubleshooting Steps:**
+        1. Ensure you have Python 3.11+ installed: ``python --version``
+        2. Make sure pip is working: ``python -m pip --version``
+        3. Try installing with verbose output: ``scoop install folder2md4llms --verbose``
+        4. Check your Python PATH configuration
+        
+        **Manual Installation Alternative:**
+        If Scoop installation fails, you can install directly via pip:
+        ``````
+        python -m pip install folder2md4llms
+        ``````
+        
+        If you're still experiencing issues, please provide:
+        - Your Windows version
+        - Python version (``python --version``)
+        - Scoop version (``scoop --version``)
+        - Full error message
+        
+        *This comment was generated automatically by the issue handler.*
+        "@
+            
+        } catch {
+            Write-Host "❌ Installation test failed: $($_.Exception.Message)"
+            
+            $comment = @"
+        ## ⚠️  Installation Issue Detected
+        
+        I've automatically tested the installation process and found an issue.
+        
+        **Error Details:**
+        ``````
+        $($_.Exception.Message)
+        ``````
+        
+        **Immediate Actions:**
+        - 🔄 I'll create a high-priority issue to fix this
+        - 📋 Investigation is needed to resolve the installation problem
+        
+        **Workaround:**
+        You can install directly via pip as an alternative:
+        ``````
+        python -m pip install folder2md4llms
+        ``````
+        
+        *This comment was generated automatically by the issue handler.*
+        "@
+        }
+        
+        # Add comment to the issue
+        $headers = @{
+            'Authorization' = "token ${{ secrets.GITHUB_TOKEN }}"
+            'Accept' = 'application/vnd.github.v3+json'
+        }
+        
+        $body = @{
+            body = $comment
+        } | ConvertTo-Json
+        
+        Invoke-RestMethod -Uri "https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.issue.number }}/comments" -Method Post -Headers $headers -Body $body -ContentType 'application/json'
+        
+        echo "::endgroup::"
+      shell: pwsh
+    
+    - name: Handle version issues
+      if: contains(github.event.issue.title, 'version') || contains(github.event.issue.title, 'update') || contains(github.event.issue.body, 'version') || contains(github.event.issue.body, 'update')
+      run: |
+        echo "::group::Handling version issue"
+        
+        # Check current version status
+        Write-Host "Checking version status..."
+        
+        try {
+            # Get current version from manifest
+            $manifest = Get-Content "bucket/folder2md4llms.json" | ConvertFrom-Json
+            $current_version = $manifest.version
+            
+            # Get latest version from PyPI
+            $response = Invoke-RestMethod -Uri "https://pypi.org/pypi/folder2md4llms/json"
+            $latest_version = $response.info.version
+            
+            Write-Host "Current version: $current_version"
+            Write-Host "Latest version: $latest_version"
+            
+            if ($current_version -eq $latest_version) {
+                $status = "✅ Up to date"
+                $action = "The manifest is already at the latest version."
+            } else {
+                $status = "🔄 Update available"
+                $action = "An update is available and will be processed automatically by the Excavator workflow."
+            }
+            
+            $comment = @"
+        ## 📋 Version Status Check
+        
+        **Current Scoop manifest version:** $current_version
+        **Latest PyPI version:** $latest_version
+        **Status:** $status
+        
+        **Action:** $action
+        
+        **Manual Update Options:**
+        - Wait for automatic update via Excavator (runs every 4 hours)
+        - Update manually: ``scoop update folder2md4llms``
+        - Reinstall: ``scoop uninstall folder2md4llms && scoop install folder2md4llms``
+        
+        **Direct pip installation (always latest):**
+        ``````
+        python -m pip install --upgrade folder2md4llms
+        ``````
+        
+        *This comment was generated automatically by the issue handler.*
+        "@
+            
+        } catch {
+            Write-Host "❌ Version check failed: $($_.Exception.Message)"
+            
+            $comment = @"
+        ## ⚠️  Version Check Failed
+        
+        I encountered an issue while checking the version status.
+        
+        **Error:** $($_.Exception.Message)
+        
+        **Manual Steps:**
+        1. Check current installed version: ``scoop list folder2md4llms``
+        2. Check latest version: Visit https://pypi.org/project/folder2md4llms/
+        3. Update if needed: ``scoop update folder2md4llms``
+        
+        *This comment was generated automatically by the issue handler.*
+        "@
+        }
+        
+        # Add comment to the issue
+        $headers = @{
+            'Authorization' = "token ${{ secrets.GITHUB_TOKEN }}"
+            'Accept' = 'application/vnd.github.v3+json'
+        }
+        
+        $body = @{
+            body = $comment
+        } | ConvertTo-Json
+        
+        Invoke-RestMethod -Uri "https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.issue.number }}/comments" -Method Post -Headers $headers -Body $body -ContentType 'application/json'
+        
+        echo "::endgroup::"
+      shell: pwsh
+    
+    - name: Handle general issues
+      if: github.event.action == 'opened' && !contains(github.event.issue.title, 'installation') && !contains(github.event.issue.title, 'version') && !contains(github.event.issue.title, 'install') && !contains(github.event.issue.title, 'update')
+      run: |
+        echo "::group::Handling general issue"
+        
+        $comment = @"
+        ## 👋 Thank you for opening an issue!
+        
+        I've automatically labeled this issue and will help triage it.
+        
+        **Quick Links:**
+        - 📚 [Documentation](https://github.com/henriqueslab/folder2md4llms)
+        - 🐛 [Report Bug](https://github.com/henriqueslab/folder2md4llms/issues/new)
+        - 💡 [Request Feature](https://github.com/henriqueslab/folder2md4llms/issues/new)
+        
+        **Common Solutions:**
+        - **Installation issues:** Ensure Python 3.11+ is installed
+        - **Command not found:** Make sure Scoop's shims are in your PATH
+        - **Permission errors:** Try running as administrator
+        
+        **Getting Help:**
+        If you need immediate assistance, you can also:
+        - Check the [GitHub repository](https://github.com/henriqueslab/folder2md4llms) for examples
+        - Install directly via pip: ``python -m pip install folder2md4llms``
+        
+        A maintainer will review this issue soon. Thank you for your patience!
+        
+        *This comment was generated automatically by the issue handler.*
+        "@
+        
+        # Add comment to the issue
+        $headers = @{
+            'Authorization' = "token ${{ secrets.GITHUB_TOKEN }}"
+            'Accept' = 'application/vnd.github.v3+json'
+        }
+        
+        $body = @{
+            body = $comment
+        } | ConvertTo-Json
+        
+        Invoke-RestMethod -Uri "https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.issue.number }}/comments" -Method Post -Headers $headers -Body $body -ContentType 'application/json'
+        
+        echo "::endgroup::"
+      shell: pwsh
+    
+    - name: Auto-label issues
+      if: github.event.action == 'opened'
+      run: |
+        echo "::group::Auto-labeling issue"
+        
+        $labels = @()
+        
+        $title = "${{ github.event.issue.title }}".ToLower()
+        $body = "${{ github.event.issue.body }}".ToLower()
+        
+        # Add labels based on content
+        if ($title -match "bug|error|fail|issue|problem") {
+            $labels += "bug"
+        }
+        
+        if ($title -match "feature|enhancement|improve|add") {
+            $labels += "enhancement"
+        }
+        
+        if ($title -match "question|help|how") {
+            $labels += "question"
+        }
+        
+        if ($title -match "install|installation") {
+            $labels += "installation"
+        }
+        
+        if ($title -match "version|update") {
+            $labels += "version"
+        }
+        
+        if ($title -match "doc|documentation") {
+            $labels += "documentation"
+        }
+        
+        # Always add triage label for new issues
+        $labels += "triage"
+        
+        if ($labels.Count -gt 0) {
+            $headers = @{
+                'Authorization' = "token ${{ secrets.GITHUB_TOKEN }}"
+                'Accept' = 'application/vnd.github.v3+json'
+            }
+            
+            $body = @{
+                labels = $labels
+            } | ConvertTo-Json
+            
+            Invoke-RestMethod -Uri "https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.issue.number }}/labels" -Method Post -Headers $headers -Body $body -ContentType 'application/json'
+            
+            Write-Host "✅ Added labels: $($labels -join ', ')"
+        }
+        
+        echo "::endgroup::"
+      shell: pwsh

@@ -1,0 +1,58 @@
+{
+    "version": "0.4.28",
+    "description": "Enhanced tool to concatenate folder contents into markdown format for LLM consumption",
+    "homepage": "https://github.com/henriqueslab/folder2md4llms",
+    "license": "MIT",
+    "depends": ["python"],
+    "suggest": {
+        "vcredist": "extras/vcredist2022"
+    },
+    "installer": {
+        "script": [
+            "Write-Host 'Installing folder2md4llms...'",
+            "try {",
+            "    python -m pip install --upgrade --force-reinstall \"folder2md4llms==$version\"",
+            "    Write-Host 'Installation completed successfully!'",
+            "} catch {",
+            "    Write-Host 'Installation failed. Please ensure Python and pip are properly installed.'",
+            "    throw",
+            "}"
+        ]
+    },
+    "uninstaller": {
+        "script": [
+            "Write-Host 'Uninstalling folder2md4llms...'",
+            "try {",
+            "    python -m pip uninstall -y folder2md4llms",
+            "    Write-Host 'Uninstallation completed successfully!'",
+            "} catch {",
+            "    Write-Host 'Uninstallation failed or package was not found.'",
+            "}"
+        ]
+    },
+    "post_install": [
+        "Write-Host ''",
+        "Write-Host 'folder2md4llms has been installed successfully!' -ForegroundColor Green",
+        "Write-Host ''",
+        "Write-Host 'Quick start:'",
+        "Write-Host '  folder2md . --output output.md    # Process current directory'",
+        "Write-Host '  folder2md --help                  # Show all options'",
+        "Write-Host '  folder2md --init-ignore           # Generate .folder2md_ignore file'",
+        "Write-Host ''",
+        "Write-Host 'For more information, visit: https://github.com/henriqueslab/folder2md4llms'",
+        "Write-Host ''"
+    ],
+    "checkver": {
+        "url": "https://pypi.org/pypi/folder2md4llms/json",
+        "jsonpath": "$.info.version"
+    },
+    "autoupdate": {
+        "note": "This package is installed via pip and will be updated automatically when the version changes"
+    },
+    "notes": [
+        "This package requires Python 3.11 or higher to be installed.",
+        "The package is installed via pip and managed by Python's package system.",
+        "To update manually, run: python -m pip install --upgrade folder2md4llms",
+        "Documentation: https://github.com/henriqueslab/folder2md4llms"
+    ]
+}
