@@ -104,8 +104,9 @@ jobs:
         echo "::group::Testing Scoop installation"
         $start_time = Get-Date
         
-        # Add current directory as a local bucket
-        scoop bucket add test-bucket .
+        # Add current directory as a local bucket (absolute path)
+        $currentDir = Get-Location
+        scoop bucket add test-bucket "$currentDir"
         
         # Install the package
         Write-Host "Installing folder2md4llms..."
