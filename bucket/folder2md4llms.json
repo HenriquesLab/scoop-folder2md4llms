@@ -13,11 +13,6 @@
             "try {",
             "    python -m pip install --upgrade --force-reinstall \"folder2md4llms==$version\"",
             "    Write-Host 'Installation completed successfully!'",
-            "    # Create shim batch file",
-            "    $shimPath = Join-Path $dir 'folder2md.cmd'",
-            "    Set-Content -Path $shimPath -Value '@echo off' -Encoding ASCII",
-            "    Add-Content -Path $shimPath -Value 'python -m folder2md4llms.cli %*' -Encoding ASCII",
-            "    Write-Host \"Created shim at: $shimPath\"",
             "} catch {",
             "    Write-Host 'Installation failed. Please ensure Python and pip are properly installed.'",
             "    throw",
@@ -29,19 +24,18 @@
             "Write-Host 'Uninstalling folder2md4llms...'",
             "try {",
             "    python -m pip uninstall -y folder2md4llms",
-            "    # Clean up shim file",
-            "    $shimPath = Join-Path $dir 'folder2md.cmd'",
-            "    if (Test-Path $shimPath) {",
-            "        Remove-Item $shimPath -Force",
-            "        Write-Host 'Removed shim file'",
-            "    }",
             "    Write-Host 'Uninstallation completed successfully!'",
             "} catch {",
             "    Write-Host 'Uninstallation failed or package was not found.'",
             "}"
         ]
     },
-    "bin": "folder2md.cmd",
+    "bin": "folder2md.bat",
+    "pre_install": [
+        "# Create wrapper batch file",
+        "Set-Content -Path \"$dir\\folder2md.bat\" -Value '@echo off' -Encoding ASCII",
+        "Add-Content -Path \"$dir\\folder2md.bat\" -Value 'python -m folder2md4llms.cli %*' -Encoding ASCII"
+    ],
     "post_install": [
         "Write-Host ''",
         "Write-Host 'folder2md4llms has been installed successfully!' -ForegroundColor Green",
