@@ -185,7 +185,7 @@ jobs:
         
         # Test ignore file generation
         Push-Location test_project
-        folder2md --init-ignore
+        folder2md --init-ignore --force
         Pop-Location
         
         if (-not (Test-Path "test_project/.folder2md_ignore")) {

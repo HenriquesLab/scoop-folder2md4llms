@@ -28,11 +28,13 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
         fetch-depth: 0
 
+    - name: Set up GitHub CLI
+      uses: cli/gh-cli-action@v2
+      with:
+        version: '2.40.0'
+        
     - name: Set up environment
       run: |
-        # Install GitHub CLI
-        winget install --id GitHub.cli
-        
         # Set up git config
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
