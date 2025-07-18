@@ -3,18 +3,30 @@
     "description": "Enhanced tool to concatenate folder contents into markdown format for LLM consumption",
     "homepage": "https://github.com/henriqueslab/folder2md4llms",
     "license": "MIT",
-    "depends": ["python"],
     "suggest": {
         "vcredist": "extras/vcredist2022"
     },
     "installer": {
         "script": [
             "Write-Host 'Installing folder2md4llms...'",
+            "# Check for Python availability",
             "try {",
+            "    $pythonCmd = Get-Command python -ErrorAction Stop",
+            "    Write-Host \"Found Python at: $($pythonCmd.Source)\"",
+            "} catch {",
+            "    Write-Host 'Python not found in PATH. Please install Python 3.11+ first.'",
+            "    Write-Host 'You can install Python via: scoop install python'",
+            "    throw 'Python is required but not found'",
+            "}",
+            "",
+            "# Install folder2md4llms",
+            "try {",
+            "    Write-Host 'Installing folder2md4llms package...'",
             "    python -m pip install --upgrade --force-reinstall \"folder2md4llms==$version\"",
             "    Write-Host 'Installation completed successfully!'",
             "} catch {",
-            "    Write-Host 'Installation failed. Please ensure Python and pip are properly installed.'",
+            "    Write-Host 'Installation failed. Error details:'",
+            "    Write-Host $_.Exception.Message",
             "    throw",
             "}"
         ]
@@ -56,6 +68,7 @@
     },
     "notes": [
         "This package requires Python 3.11 or higher to be installed.",
+        "If Python is not available, install it first: scoop install python",
         "The package is installed via pip and managed by Python's package system.",
         "To update manually, run: python -m pip install --upgrade folder2md4llms",
         "Documentation: https://github.com/henriqueslab/folder2md4llms"
