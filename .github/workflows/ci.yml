@@ -81,6 +81,53 @@ jobs:
         echo "::endgroup::"
       shell: pwsh
     
+    - name: Verify Python environment and registry
+      run: |
+        echo "::group::Verifying Python environment and registry"
+        
+        # Add scoop shims to PATH
+        $env:PATH = "$env:USERPROFILE\scoop\shims;$env:PATH"
+        
+        # Check Python installation and registry
+        Write-Host "=== PYTHON ENVIRONMENT VERIFICATION ==="
+        Write-Host "Python version and location:"
+        python --version
+        Get-Command python | Select-Object Source
+        
+        Write-Host "Checking Python registry entries..."
+        $regFile = "$env:USERPROFILE\scoop\apps\python\current\install-pep-514.reg"
+        if (Test-Path $regFile) {
+            Write-Host "✅ Registry file exists: $regFile"
+        } else {
+            Write-Host "❌ Registry file not found: $regFile"
+        }
+        
+        # Check if Python is properly registered
+        try {
+            $pythonPath = Get-ItemProperty -Path "HKCU:\SOFTWARE\Python\PythonCore\3.*\InstallPath" -ErrorAction Stop
+            Write-Host "✅ Python registry entry found: $($pythonPath.PSPath)"
+        } catch {
+            Write-Host "⚠️  Python registry entry not found or accessible"
+        }
+        
+        # Verify pip installation location
+        Write-Host "Pip installation details:"
+        python -m pip --version
+        python -c "import sys; print(f'Python executable: {sys.executable}')"
+        python -c "import sys; print(f'Python paths: {sys.path}')"
+        
+        # Test scoop reset functionality
+        Write-Host "Testing scoop reset..."
+        try {
+            scoop reset python
+            Write-Host "✅ Scoop reset completed successfully"
+        } catch {
+            Write-Host "⚠️  Scoop reset failed: $($_.Exception.Message)"
+        }
+        
+        echo "::endgroup::"
+      shell: pwsh
+    
     - name: Test functionality
       run: |
         echo "::group::Testing functionality"
@@ -110,6 +157,9 @@ jobs:
         
         Write-Host "Current PATH entries:"
         $env:PATH.Split(';') | ForEach-Object { Write-Host "  $_" }
+        
+        Write-Host "Checking pip installed packages..."
+        python -m pip list | Select-String "folder2md4llms"
         
         Write-Host "Testing Python module directly..."
         try {
