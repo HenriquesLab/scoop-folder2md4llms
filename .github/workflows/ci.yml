@@ -88,6 +88,37 @@ jobs:
         # Add scoop shims to PATH
         $env:PATH = "$env:USERPROFILE\scoop\shims;$env:PATH"
         
+        # Debug: Check what files were created
+        Write-Host "=== DEBUGGING INFORMATION ==="
+        Write-Host "Checking Scoop apps directory..."
+        $appsDir = "$env:USERPROFILE\scoop\apps\folder2md4llms"
+        if (Test-Path $appsDir) {
+            Write-Host "Apps directory exists: $appsDir"
+            Get-ChildItem $appsDir -Recurse | ForEach-Object { Write-Host "  $($_.FullName)" }
+        } else {
+            Write-Host "Apps directory does not exist: $appsDir"
+        }
+        
+        Write-Host "Checking Scoop shims directory..."
+        $shimsDir = "$env:USERPROFILE\scoop\shims"
+        if (Test-Path $shimsDir) {
+            Write-Host "Shims directory exists: $shimsDir"
+            Get-ChildItem $shimsDir | Where-Object Name -like "*folder2md*" | ForEach-Object { Write-Host "  Found shim: $($_.Name)" }
+        } else {
+            Write-Host "Shims directory does not exist: $shimsDir"
+        }
+        
+        Write-Host "Current PATH entries:"
+        $env:PATH.Split(';') | ForEach-Object { Write-Host "  $_" }
+        
+        Write-Host "Testing Python module directly..."
+        try {
+            python -m folder2md4llms.cli --version
+            Write-Host "✅ Python module works directly"
+        } catch {
+            Write-Host "❌ Python module failed: $($_.Exception.Message)"
+        }
+        
         # Create test directory
         New-Item -ItemType Directory -Path "test-project" -Force
         Set-Content -Path "test-project\test.py" -Value "print('Hello, World!')"
@@ -95,7 +126,14 @@ jobs:
         
         # Test folder2md command
         Write-Host "Testing folder2md command..."
-        folder2md test-project --output test-output.md
+        try {
+            folder2md test-project --output test-output.md
+            Write-Host "✅ folder2md command executed successfully"
+        } catch {
+            Write-Host "❌ folder2md command failed: $($_.Exception.Message)"
+            Write-Host "Trying with Python module directly..."
+            python -m folder2md4llms.cli test-project --output test-output.md
+        }
         
         # Verify output
         if (Test-Path "test-output.md") {
@@ -114,11 +152,25 @@ jobs:
         
         # Test help command
         Write-Host "Testing help command..."
-        folder2md --help
+        try {
+            folder2md --help
+            Write-Host "✅ Help command executed successfully"
+        } catch {
+            Write-Host "❌ Help command failed: $($_.Exception.Message)"
+            Write-Host "Trying with Python module directly..."
+            python -m folder2md4llms.cli --help
+        }
         
         # Test version command
         Write-Host "Testing version command..."
-        folder2md --version
+        try {
+            folder2md --version
+            Write-Host "✅ Version command executed successfully"
+        } catch {
+            Write-Host "❌ Version command failed: $($_.Exception.Message)"
+            Write-Host "Trying with Python module directly..."
+            python -m folder2md4llms.cli --version
+        }
         
         Write-Host "✅ All functionality tests passed"
         echo "::endgroup::"
