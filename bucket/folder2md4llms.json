@@ -5,7 +5,6 @@
     "license": "MIT",
     "depends": "python",
     "url": "https://github.com/henriqueslab/folder2md4llms/archive/refs/heads/main.zip",
-    "hash": "skip",
     "extract_dir": "folder2md4llms-main",
     "post_install": [
         "Write-Host 'Installing folder2md4llms via pip...' -ForegroundColor Green",
