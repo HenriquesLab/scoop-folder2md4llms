@@ -104,13 +104,9 @@ jobs:
         echo "::group::Testing Scoop installation"
         $start_time = Get-Date
         
-        # Add current directory as a local bucket (absolute path)
-        $currentDir = Get-Location
-        scoop bucket add test-bucket "$currentDir"
-        
-        # Install the package
-        Write-Host "Installing folder2md4llms..."
-        scoop install test-bucket/folder2md4llms
+        # Install the package directly from the manifest file
+        Write-Host "Installing folder2md4llms from local manifest..."
+        scoop install ./bucket/folder2md4llms.json
         
         $install_time = Get-Date
         $duration = ($install_time - $start_time).TotalSeconds
@@ -287,9 +283,6 @@ jobs:
         
         # Remove test files
         Remove-Item -Path "test_project" -Recurse -Force -ErrorAction SilentlyContinue
-        
-        # Remove test bucket
-        try { scoop bucket rm test-bucket } catch { Write-Host "Test bucket not found or already removed" }
         
         # Uninstall if still installed
         try { scoop uninstall folder2md4llms } catch { Write-Host "Package not found or already uninstalled" }
