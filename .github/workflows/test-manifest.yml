@@ -1,16 +1,16 @@
-name: Test Formula
+name: Test Manifest
 
 on:
   push:
     branches: [main]
     paths:
       - 'bucket/**'
-      - '.github/workflows/test-formula.yml'
+      - '.github/workflows/test-manifest.yml'
   pull_request:
     branches: [main]
     paths:
       - 'bucket/**'
-      - '.github/workflows/test-formula.yml'
+      - '.github/workflows/test-manifest.yml'
   schedule:
     # Run daily at 06:00 UTC to catch any upstream changes
     - cron: '0 6 * * *'
@@ -21,7 +21,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test-formula:
+  test-manifest:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false

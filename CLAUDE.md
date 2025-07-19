@@ -10,7 +10,7 @@ This is a **Scoop bucket repository** for Windows installation of [folder2md4llm
 
 This repository contains:
 - `bucket/folder2md4llms.json` - Scoop package manifest
-- `.github/workflows/` - CI/CD automation (ci.yml, excavator.yml, issue-handler.yml)
+- `.github/workflows/` - CI/CD automation (test-manifest.yml, update-manifest.yml)
 - `README.md` - Installation and usage documentation
 
 ## Common Commands
@@ -32,9 +32,8 @@ This repository contains:
 ```
 
 ### CI/CD
-- **Excavator**: Runs every 4 hours to check PyPI for new versions and auto-update manifest
-- **CI**: Tests on Windows 2022/latest with Python 3.11/3.12
-- **Issue Handler**: Automated issue triage and support
+- **Update Manifest**: Runs every 4 hours to check PyPI for new versions and auto-update manifest
+- **Test Manifest**: Tests on Windows 2022/latest with Python 3.11/3.12/3.13
 
 ## Key Architecture
 
@@ -69,16 +68,15 @@ This repository contains:
 ## Version Management
 
 - **Source of Truth**: PyPI version of `folder2md4llms`
-- **Update Process**: Excavator monitors PyPI → Creates PR → Tests → Merges
+- **Update Process**: Update Manifest workflow monitors PyPI → Creates PR → Tests → Merges
 - **Manifest**: `bucket/folder2md4llms.json` contains current version
 - **Checkver URL**: `https://pypi.org/pypi/folder2md4llms/json`
 
 ## CI/CD Pipeline
 
 ### Workflows
-1. **CI** (`ci.yml`): Validates manifest, tests installation/functionality
-2. **Excavator** (`excavator.yml`): Automated version updates every 4 hours  
-3. **Issue Handler** (`issue-handler.yml`): Automated issue triage
+1. **Test Manifest** (`test-manifest.yml`): Validates manifest, tests installation/functionality
+2. **Update Manifest** (`update-manifest.yml`): Automated version updates every 4 hours
 
 ### Test Coverage
 - JSON manifest validation
