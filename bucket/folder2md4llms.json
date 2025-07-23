@@ -1,5 +1,5 @@
 {
-    "version": "0.4.35",
+    "version": "0.4.37",
     "description": "Enhanced tool to concatenate folder contents into markdown format for LLM consumption",
     "homepage": "https://github.com/henriqueslab/folder2md4llms",
     "license": "MIT",
