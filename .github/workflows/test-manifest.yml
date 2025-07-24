@@ -28,6 +28,7 @@ jobs:
       matrix:
         os: [windows-2022, windows-latest]
         python-version: ['3.11', '3.12', '3.13']
+        manifest: ['folder2md4llms-binary']
         exclude:
           # Reduce matrix for faster execution
           - os: windows-2022
@@ -37,19 +38,6 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
-
-    - name: Cache pip packages
-      uses: actions/cache@v4
-      with:
-        path: ~\AppData\Local\pip\Cache
-        key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('bucket/*.json') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-${{ matrix.python-version }}-
-          ${{ runner.os }}-pip-
 
     - name: Install and setup Scoop
       run: |
@@ -78,19 +66,19 @@ jobs:
         echo "::group::Validating manifest JSON"
         
         # Test JSON syntax
-        $manifest = Get-Content "bucket/folder2md4llms.json" | ConvertFrom-Json
+        $manifest = Get-Content "bucket/${{ matrix.manifest }}.json" | ConvertFrom-Json
         
         # Validate required fields
         if (-not $manifest.version) { throw "Missing version field" }
         if (-not $manifest.description) { throw "Missing description field" }
         if (-not $manifest.homepage) { throw "Missing homepage field" }
         if (-not $manifest.license) { throw "Missing license field" }
-        if (-not $manifest.depends) { throw "Missing depends field" }
-        # Check for either installer OR post_install field (this manifest uses post_install approach)
-        if (-not $manifest.installer -and -not $manifest.post_install) { 
-            throw "Missing installer or post_install field" 
-        }
-        # Note: This manifest doesn't use bin field - it creates shims via post_install scripts
+        
+        # Validate binary manifest fields
+        if (-not $manifest.architecture) { throw "Missing architecture field for binary manifest" }
+        if (-not $manifest.architecture.'64bit') { throw "Missing 64bit architecture for binary manifest" }
+        if (-not $manifest.architecture.'64bit'.url) { throw "Missing binary URL" }
+        if (-not $manifest.architecture.'64bit'.hash) { throw "Missing binary hash" }
         
         Write-Host "✅ Manifest JSON validation passed"
         Write-Host "Version: $($manifest.version)"
@@ -105,8 +93,8 @@ jobs:
         $start_time = Get-Date
         
         # Install the package directly from the manifest file
-        Write-Host "Installing folder2md4llms from local manifest..."
-        $manifestPath = Join-Path (Get-Location) "bucket\folder2md4llms.json"
+        Write-Host "Installing ${{ matrix.manifest }} from local manifest..."
+        $manifestPath = Join-Path (Get-Location) "bucket\${{ matrix.manifest }}.json"
         scoop install $manifestPath
         
         $install_time = Get-Date
@@ -244,7 +232,7 @@ jobs:
         Write-Host "PyPI version: $pypiVersion"
         
         # Get manifest version
-        $manifest = Get-Content "bucket/folder2md4llms.json" | ConvertFrom-Json
+        $manifest = Get-Content "bucket/folder2md4llms-binary.json" | ConvertFrom-Json
         $manifestVersion = $manifest.version
         Write-Host "Manifest version: $manifestVersion"
         
@@ -264,7 +252,7 @@ jobs:
         echo "::group::Testing uninstallation"
         
         # Uninstall the package
-        scoop uninstall folder2md4llms
+        scoop uninstall ${{ matrix.manifest }}
         
         # Verify the command is no longer available
         $commandExists = Get-Command folder2md -ErrorAction SilentlyContinue
@@ -286,7 +274,7 @@ jobs:
         Remove-Item -Path "test_project" -Recurse -Force -ErrorAction SilentlyContinue
         
         # Uninstall if still installed
-        try { scoop uninstall folder2md4llms } catch { Write-Host "Package not found or already uninstalled" }
+        try { scoop uninstall folder2md4llms-binary } catch { Write-Host "Package not found or already uninstalled" }
         
         Write-Host "✅ Cleanup completed"
         

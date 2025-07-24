@@ -4,15 +4,15 @@
 [![Excavator](https://github.com/HenriquesLab/scoop-folder2md4llms/actions/workflows/excavator.yml/badge.svg)](https://github.com/HenriquesLab/scoop-folder2md4llms/actions/workflows/excavator.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A [Scoop](https://scoop.sh/) bucket for easy Windows installation of [folder2md4llms](https://github.com/henriqueslab/folder2md4llms) - a powerful tool that converts repository contents into LLM-friendly Markdown files.
+A [Scoop](https://scoop.sh/) bucket for easy Windows installation of [folder2md4llms](https://github.com/henriqueslab/folder2md4llms) binary - a powerful standalone tool that converts repository contents into LLM-friendly Markdown files.
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
 - **Windows 10/11** (or Windows Server 2016+)
-- **Python 3.11+** installed and accessible via `python` command
 - **PowerShell 5.1+** (usually pre-installed)
+- **No Python required** - standalone binary
 
 ### Installation
 
@@ -29,7 +29,7 @@ A [Scoop](https://scoop.sh/) bucket for easy Windows installation of [folder2md4
 
 3. **Install folder2md4llms**:
    ```powershell
-   scoop install folder2md4llms
+   scoop install folder2md4llms-binary
    ```
 
 ### Usage
@@ -57,7 +57,7 @@ folder2md --help
 
 This Scoop bucket provides:
 
-- **folder2md4llms** - The main package with all dependencies
+- **folder2md4llms-binary** - Standalone executable with no dependencies
 - **Automatic updates** - Excavator workflow keeps the package current
 - **Comprehensive testing** - CI workflows ensure reliability
 - **Issue automation** - Intelligent issue handling and support
@@ -77,23 +77,23 @@ ignore_patterns:
 output_format: "markdown"
 ```
 
-### Python Module Access
+### Binary Executable
 
-You can also access the tool as a Python module:
+The installed binary is completely standalone:
 
 ```powershell
-# Direct module access
-python -m folder2md4llms.cli --help
-
-# Or use the installed executable
+# Use the installed executable directly
 folder2md --help
+
+# No Python module access needed - it's a standalone binary
+folder2md . --output output.md
 ```
 
 ### Updating
 
 ```powershell
 # Update to latest version
-scoop update folder2md4llms
+scoop update folder2md4llms-binary
 
 # Update all packages
 scoop update
@@ -119,10 +119,10 @@ This bucket includes an automated update system that:
 Every change is automatically tested on:
 
 - ✅ Windows 2019, 2022, and latest
-- ✅ Python 3.11 and 3.12
-- ✅ Installation and uninstallation
+- ✅ Binary installation and uninstallation
 - ✅ Basic functionality testing
 - ✅ Manifest validation
+- ✅ Standalone executable verification
 
 ### Issue Management
 
@@ -138,37 +138,27 @@ The bucket includes intelligent issue handling:
 ### System Requirements
 
 - **Operating System**: Windows 10/11, Windows Server 2016+
-- **Python**: 3.11 or higher
-- **Memory**: 512MB RAM minimum
-- **Storage**: 100MB free space
+- **Python**: Not required - standalone binary
+- **Memory**: 256MB RAM minimum
+- **Storage**: 50MB free space
 
-### Python Dependencies
+### Binary Advantages
 
-The following packages are automatically installed:
+The standalone binary provides:
 
-- `click>=8.0.0` - Command-line interface
-- `httpx>=0.24.0` - HTTP client
-- `markdown>=3.4.0` - Markdown processing
-- `nbconvert>=7.0.0` - Jupyter notebook conversion
-- `openpyxl>=3.1.0` - Excel file support
-- `pillow>=9.0.0` - Image processing
-- `psutil>=5.9.0` - System monitoring
-- `pygments>=2.10.0` - Syntax highlighting
-- `pypdf>=4.0.0` - PDF processing
-- `pyperclip>=1.9.0` - Clipboard operations
-- `python-docx>=0.8.11` - Word document support
-- `python-magic-bin` - File type detection (Windows)
-- `python-pptx>=0.6.21` - PowerPoint support
-- `pyyaml>=6.0` - YAML configuration
-- `rich>=13.0.0` - Terminal formatting
-- `striprtf>=0.0.26` - RTF processing
-- `tqdm>=4.64.0` - Progress bars
+- **No dependencies** - Everything included in single executable
+- **Fast startup** - No Python import overhead
+- **Version consistency** - No dependency conflicts
+- **Simple distribution** - Single file installation
+- **Offline capable** - No package downloads during install
+- **Portable** - Can be copied and run anywhere
+- **Secure** - No script injection through dependencies
 
 ## 🔄 Alternative Installation Methods
 
-### Direct pip Installation
+### Alternative: Python Package Installation
 
-If you prefer to install without Scoop:
+If you prefer to install the Python package version:
 
 ```powershell
 python -m pip install folder2md4llms
@@ -194,10 +184,10 @@ python -m pip install -e .
 **Command not found:**
 ```powershell
 # Refresh Scoop shims
-scoop reset folder2md4llms
+scoop reset folder2md4llms-binary
 
-# Check if Python is accessible
-python --version
+# Verify binary is installed
+scoop list folder2md4llms-binary
 ```
 
 **Permission errors:**
@@ -208,12 +198,11 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 
 **Installation fails:**
 ```powershell
-# Check Python and pip versions
-python --version
-python -m pip --version
+# Check available architectures
+scoop info folder2md4llms-binary
 
-# Install directly if needed
-python -m pip install folder2md4llms
+# Try manual download and install
+scoop install folder2md4llms-binary --force
 ```
 
 **Package not found:**
@@ -262,9 +251,9 @@ To add new packages to this bucket:
 
 ## 📊 Statistics
 
-- **Total Packages**: 1
+- **Total Packages**: 1 (binary only)
 - **Supported Platforms**: Windows 10/11, Server 2016+
-- **Python Versions**: 3.11, 3.12
+- **Python Versions**: Not applicable - standalone binary
 - **Update Frequency**: Every 4 hours
 - **Test Coverage**: 100% (installation, functionality, uninstallation)
 
