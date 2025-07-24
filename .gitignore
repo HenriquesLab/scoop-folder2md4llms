@@ -68,3 +68,8 @@ docs/_build/
 .env
 .env.local
 .env.*.local
+
+# Claude
+.claude/
+Claude.md
+CLAUDE.md
