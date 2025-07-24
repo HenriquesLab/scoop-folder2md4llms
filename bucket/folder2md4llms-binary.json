@@ -6,7 +6,7 @@
     "architecture": {
         "64bit": {
             "url": "https://github.com/HenriquesLab/folder2md4llms/releases/download/v0.4.37/folder2md-windows-x64.exe",
-            "hash": "SHA256_TO_BE_UPDATED",
+            "hash": "4ecc981bccac7640bdabbfbae082bc964a4a5f828a8e884d96bf6d6db04ede38",
             "bin": "folder2md-windows-x64.exe"
         }
     },

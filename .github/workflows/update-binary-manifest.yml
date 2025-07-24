@@ -186,8 +186,10 @@ jobs:
         Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
         Invoke-RestMethod -Uri https://get.scoop.sh | Invoke-Expression
         
-        # Add Scoop to PATH
-        $env:PATH += ";$env:USERPROFILE\scoop\shims"
+        # Add Scoop to PATH for current and future steps
+        $scoopPath = "$env:USERPROFILE\scoop\shims"
+        $env:PATH += ";$scoopPath"
+        echo "$scoopPath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
         
         # Verify Scoop installation
         scoop --version
