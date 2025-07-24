@@ -2,7 +2,7 @@ name: Update Manifest
 
 on:
   repository_dispatch:
-    types: [new_release]
+    types: [new_binary_release]
   schedule:
     # Check for updates every 4 hours
     - cron: '0 */4 * * *'
