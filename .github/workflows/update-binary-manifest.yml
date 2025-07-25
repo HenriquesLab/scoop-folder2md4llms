@@ -248,21 +248,45 @@ jobs:
         $manifest = Get-Content "bucket/folder2md4llms-binary.json" | ConvertFrom-Json
         Write-Host "✅ JSON syntax validation passed"
         
-        # Test manifest directly without adding as bucket
-        # scoop bucket add test-binary-bucket .
-        
         # Test binary installation directly from manifest
         Write-Host "Testing binary installation..."
         $manifestPath = Join-Path (Get-Location) "bucket\folder2md4llms-binary.json"
         scoop install $manifestPath
         
+        # Refresh environment variables and PATH for current session
+        Write-Host "Refreshing PATH environment..."
+        $scoopShims = "$env:USERPROFILE\scoop\shims"
+        if ($env:PATH -notlike "*$scoopShims*") {
+          $env:PATH = "$scoopShims;$env:PATH"
+        }
+        
+        # Verify the binary is accessible
+        Write-Host "Checking if folder2md is accessible..."
+        $folder2mdPath = Get-Command folder2md -ErrorAction SilentlyContinue
+        if ($null -eq $folder2mdPath) {
+          # Try direct path access as fallback
+          $directPath = "$env:USERPROFILE\scoop\shims\folder2md.exe"
+          if (Test-Path $directPath) {
+            Write-Host "Using direct path: $directPath"
+            $folder2mdCmd = $directPath
+          } else {
+            Write-Host "Available commands in scoop shims:"
+            Get-ChildItem "$env:USERPROFILE\scoop\shims" -Name | Where-Object { $_ -like "*folder2md*" }
+            throw "❌ folder2md command not found after installation"
+          }
+        } else {
+          $folder2mdCmd = "folder2md"
+          Write-Host "✅ folder2md command found in PATH"
+        }
+        
         # Test basic functionality
-        folder2md --version
-        folder2md --help | Out-Null
+        Write-Host "Testing binary functionality..."
+        & $folder2mdCmd --version
+        & $folder2mdCmd --help | Out-Null
         
         # Test with a simple example
         Set-Content -Path "test.md" -Value "# Test Binary"
-        folder2md . --output test_binary_output.md
+        & $folder2mdCmd . --output test_binary_output.md
         
         if (-not (Test-Path "test_binary_output.md")) {
           throw "❌ Binary output file not created"
@@ -361,8 +385,12 @@ jobs:
         Remove-Item "test.md", "test_binary_output.md" -ErrorAction SilentlyContinue
         Remove-Item -Path "temp_binary_check" -Recurse -Force -ErrorAction SilentlyContinue
         
-        # Uninstall if needed
-        scoop uninstall folder2md4llms-binary -ErrorAction SilentlyContinue
+        # Uninstall if needed (Scoop doesn't support -ErrorAction parameter)
+        try {
+          scoop uninstall folder2md4llms-binary
+        } catch {
+          Write-Host "Could not uninstall folder2md4llms-binary (may not be installed): $($_.Exception.Message)"
+        }
         
         echo "::endgroup::"
       shell: pwsh
