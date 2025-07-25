@@ -1,12 +1,12 @@
 {
-  "version": "0.4.40",
+  "version": "0.5.0",
   "description": "Enhanced tool to concatenate folder contents into markdown format for LLM consumption (Binary Distribution)",
   "homepage": "https://github.com/henriqueslab/folder2md4llms",
   "license": "MIT",
   "architecture": {
     "64bit": {
-      "url": "https://github.com/HenriquesLab/folder2md4llms/releases/download/v0.4.40/folder2md-windows-x64.exe",
-      "hash": "6178a0fd6ea39e24aba3724ec20909499e1c9ff24a316aa5f649befd5da989d8",
+      "url": "https://github.com/HenriquesLab/folder2md4llms/releases/download/v0.5.0/folder2md-windows-x64.exe",
+      "hash": "869877085f67b5aeccdc5230bc364f9edc514dc354c4d36d5f2f1541837bf20e",
       "bin": "folder2md-windows-x64.exe"
     }
   },
