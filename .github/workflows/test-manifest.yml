@@ -167,6 +167,21 @@ jobs:
       run: |
         echo "::group::Testing basic functionality"
         
+        # Resolve folder2md command path (same logic as verification step)
+        $folder2mdCmd = "folder2md"
+        $commandExists = Get-Command folder2md -ErrorAction SilentlyContinue
+        if (-not $commandExists) {
+          $directPath = "$env:USERPROFILE\scoop\shims\folder2md"
+          if (Test-Path $directPath) {
+            $folder2mdCmd = $directPath
+          } else {
+            $binaryPath = "$env:USERPROFILE\scoop\shims\folder2md-windows-x64.exe"
+            if (Test-Path $binaryPath) {
+              $folder2mdCmd = $binaryPath
+            }
+          }
+        }
+        
         # Create a test directory with various file types
         New-Item -ItemType Directory -Path "test_project" -Force
         New-Item -ItemType Directory -Path "test_project/src" -Force
@@ -179,7 +194,7 @@ jobs:
         
         # Test basic folder2md functionality
         Push-Location test_project
-        folder2md . --output test_output.md
+        & $folder2mdCmd . --output test_output.md
         Pop-Location
         
         # Verify output file was created
@@ -201,7 +216,7 @@ jobs:
         
         # Test ignore file generation
         Push-Location test_project
-        folder2md --init-ignore --force
+        & $folder2mdCmd --init-ignore --force
         Pop-Location
         
         if (-not (Test-Path "test_project/.folder2md_ignore")) {
@@ -217,6 +232,21 @@ jobs:
       run: |
         echo "::group::Testing configuration file support"
         
+        # Resolve folder2md command path
+        $folder2mdCmd = "folder2md"
+        $commandExists = Get-Command folder2md -ErrorAction SilentlyContinue
+        if (-not $commandExists) {
+          $directPath = "$env:USERPROFILE\scoop\shims\folder2md"
+          if (Test-Path $directPath) {
+            $folder2mdCmd = $directPath
+          } else {
+            $binaryPath = "$env:USERPROFILE\scoop\shims\folder2md-windows-x64.exe"
+            if (Test-Path $binaryPath) {
+              $folder2mdCmd = $binaryPath
+            }
+          }
+        }
+        
         # Create a config file
         $configContent = @"
         output: config_test.md
@@ -230,7 +260,7 @@ jobs:
         
         # Test with config file
         Push-Location test_project
-        folder2md . --output config_test.md
+        & $folder2mdCmd . --output config_test.md
         Pop-Location
         
         # Verify config-based output was created
