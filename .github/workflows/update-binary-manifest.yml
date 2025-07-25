@@ -264,15 +264,23 @@ jobs:
         Write-Host "Checking if folder2md is accessible..."
         $folder2mdPath = Get-Command folder2md -ErrorAction SilentlyContinue
         if ($null -eq $folder2mdPath) {
-          # Try direct path access as fallback
-          $directPath = "$env:USERPROFILE\scoop\shims\folder2md.exe"
+          # Try direct path access as fallback - check for the shim without .exe extension first
+          $directPath = "$env:USERPROFILE\scoop\shims\folder2md"
           if (Test-Path $directPath) {
-            Write-Host "Using direct path: $directPath"
+            Write-Host "Using direct shim path: $directPath"
             $folder2mdCmd = $directPath
           } else {
             Write-Host "Available commands in scoop shims:"
             Get-ChildItem "$env:USERPROFILE\scoop\shims" -Name | Where-Object { $_ -like "*folder2md*" }
-            throw "❌ folder2md command not found after installation"
+            
+            # Try using the binary directly if shim doesn't work
+            $binaryPath = "$env:USERPROFILE\scoop\shims\folder2md-windows-x64.exe"
+            if (Test-Path $binaryPath) {
+              Write-Host "Using direct binary path: $binaryPath"
+              $folder2mdCmd = $binaryPath
+            } else {
+              throw "❌ folder2md command not found after installation"
+            }
           }
         } else {
           $folder2mdCmd = "folder2md"
