@@ -63,17 +63,14 @@ jobs:
         echo "::endgroup::"
       shell: pwsh
 
-    - name: Test local bucket installation
+    - name: Test local manifest installation
       run: |
-        echo "::group::Testing local bucket installation"
+        echo "::group::Testing local manifest installation"
         
-        # Add the current repository as a bucket
-        $bucketPath = Get-Location
-        Write-Host "Adding local bucket from: $bucketPath"
-        scoop bucket add folder2md4llms-local $bucketPath
-        
-        Write-Host "Installing binary from local bucket..."
-        scoop install folder2md4llms-local/folder2md4llms-binary
+        # Install the package directly from the manifest file
+        Write-Host "Installing folder2md4llms-binary from local manifest..."
+        $manifestPath = Join-Path (Get-Location) "bucket\folder2md4llms-binary.json"
+        scoop install $manifestPath
         
         Write-Host "✅ Local installation completed"
         echo "::endgroup::"
@@ -195,13 +192,13 @@ jobs:
         
         # Create config file
         $configContent = @"
-        output: config_test.md
-        include_patterns:
-          - "*.py"
-          - "*.md"
-        exclude_patterns:
-          - "test_output.md"
-        "@
+output: config_test.md
+include_patterns:
+  - "*.py"
+  - "*.md"
+exclude_patterns:
+  - "test_output.md"
+"@
         Set-Content -Path "folder2md.yaml" -Value $configContent
         
         # Test with config
@@ -220,9 +217,8 @@ jobs:
       run: |
         echo "::group::Testing real repository installation"
         
-        # Clean up local bucket
+        # Clean up local installation
         scoop uninstall folder2md4llms-binary
-        scoop bucket rm folder2md4llms-local
         
         # Test installation from actual GitHub repository
         Write-Host "Adding bucket from GitHub..."
@@ -264,11 +260,9 @@ jobs:
         # Test uninstall
         scoop uninstall folder2md4llms-binary
         
-        # Remove bucket
-        if (${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}) {
+        # Remove bucket if it was added during real repository test
+        if ("${{ github.event_name }}" -eq "schedule" -or "${{ github.event_name }}" -eq "workflow_dispatch") {
           scoop bucket rm folder2md4llms
-        } else {
-          scoop bucket rm folder2md4llms-local
         }
         
         # Verify removal
