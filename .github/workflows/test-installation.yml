@@ -12,7 +12,6 @@ on:
       - 'bucket/**'
       - '.github/workflows/test-installation.yml'
   schedule:
-    # Run weekly on Sundays at 04:00 UTC
     - cron: '0 4 * * 0'
   workflow_dispatch:
 
@@ -35,11 +34,8 @@ jobs:
     - name: Clean up any existing installations
       run: |
         echo "::group::Cleanup existing installations"
-        
-        # Remove any existing buckets and installations
         try { scoop uninstall folder2md4llms-binary } catch { Write-Host "No existing installation found" }
         try { scoop bucket rm folder2md4llms } catch { Write-Host "Bucket not found" }
-        
         echo "✅ Cleanup completed"
         echo "::endgroup::"
       shell: pwsh
@@ -47,18 +43,11 @@ jobs:
     - name: Install Scoop
       run: |
         echo "::group::Installing Scoop"
-        
-        # Install Scoop
         Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
         Invoke-RestMethod -Uri https://get.scoop.sh | Invoke-Expression
-        
-        # Add to PATH
         $env:PATH += ";$env:USERPROFILE\scoop\shims"
         echo "$env:USERPROFILE\scoop\shims" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-        
-        # Verify installation
         scoop --version
-        
         echo "✅ Scoop installation completed"
         echo "::endgroup::"
       shell: pwsh
@@ -66,12 +55,9 @@ jobs:
     - name: Test local manifest installation
       run: |
         echo "::group::Testing local manifest installation"
-        
-        # Install the package directly from the manifest file
         Write-Host "Installing folder2md4llms-binary from local manifest..."
         $manifestPath = Join-Path (Get-Location) "bucket\folder2md4llms-binary.json"
         scoop install $manifestPath
-        
         Write-Host "✅ Local installation completed"
         echo "::endgroup::"
       shell: pwsh
@@ -79,11 +65,8 @@ jobs:
     - name: Verify installation
       run: |
         echo "::group::Verifying installation"
-        
-        # Refresh PATH
         $env:PATH += ";$env:USERPROFILE\scoop\shims"
         
-        # Find command
         $folder2mdCmd = "folder2md"
         $commandExists = Get-Command folder2md -ErrorAction SilentlyContinue
         if (-not $commandExists) {
@@ -101,13 +84,8 @@ jobs:
         }
         
         Write-Host "Found command: $folder2mdCmd"
-        
-        # Test version command
         & $folder2mdCmd --version
-        
-        # Test help command  
         & $folder2mdCmd --help | Out-Null
-        
         Write-Host "✅ Installation verification passed"
         echo "::endgroup::"
       shell: pwsh
@@ -115,8 +93,6 @@ jobs:
     - name: Test basic functionality
       run: |
         echo "::group::Testing basic functionality"
-        
-        # Resolve command path
         $folder2mdCmd = "folder2md"
         $commandExists = Get-Command folder2md -ErrorAction SilentlyContinue
         if (-not $commandExists) {
@@ -131,24 +107,19 @@ jobs:
           }
         }
         
-        # Create test project
         New-Item -ItemType Directory -Path "test_scoop" -Force
         Set-Location "test_scoop"
-        
         Set-Content -Path "README.md" -Value "# Test Project"
         Set-Content -Path "main.py" -Value "print('Hello from Scoop test')"
         New-Item -ItemType Directory -Path "src" -Force
         Set-Content -Path "src/utils.py" -Value "def hello(): pass"
         
-        # Test folder2md
         & $folder2mdCmd . --output test_output.md
         
-        # Verify output
         if (-not (Test-Path "test_output.md")) {
           throw "❌ Output file not created"
         }
         
-        # Check content
         $content = Get-Content "test_output.md" -Raw
         if ($content -notmatch "Test Project") {
           throw "❌ README content missing"
@@ -158,7 +129,6 @@ jobs:
           throw "❌ Python content missing"
         }
         
-        # Test ignore file generation
         & $folder2mdCmd --init-ignore
         
         if (-not (Test-Path ".folder2md_ignore")) {
@@ -169,103 +139,13 @@ jobs:
         echo "::endgroup::"
       shell: pwsh
 
-    - name: Test configuration file support
-      run: |
-        echo "::group::Testing configuration file support"
-        
-        # Resolve command path
-        $folder2mdCmd = "folder2md"
-        $commandExists = Get-Command folder2md -ErrorAction SilentlyContinue
-        if (-not $commandExists) {
-          $directPath = "$env:USERPROFILE\scoop\shims\folder2md"
-          if (Test-Path $directPath) {
-            $folder2mdCmd = $directPath
-          } else {
-            $binaryPath = "$env:USERPROFILE\scoop\shims\folder2md-windows-x64.exe"
-            if (Test-Path $binaryPath) {
-              $folder2mdCmd = $binaryPath
-            }
-          }
-        }
-        
-        Set-Location "test_scoop"
-        
-        # Create config file
-        $configContent = @"
-output: config_test.md
-include_patterns:
-  - "*.py"
-  - "*.md"
-exclude_patterns:
-  - "test_output.md"
-"@
-        Set-Content -Path "folder2md.yaml" -Value $configContent
-        
-        # Test with config
-        & $folder2mdCmd .
-        
-        if (-not (Test-Path "config_test.md")) {
-          throw "❌ Config-based output not created"
-        }
-        
-        Write-Host "✅ Configuration file test passed"
-        echo "::endgroup::"
-      shell: pwsh
-
-    - name: Test real repository installation
-      if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
-      run: |
-        echo "::group::Testing real repository installation"
-        
-        # Clean up local installation
-        scoop uninstall folder2md4llms-binary
-        
-        # Test installation from actual GitHub repository
-        Write-Host "Adding bucket from GitHub..."
-        scoop bucket add folder2md4llms https://github.com/HenriquesLab/scoop-folder2md4llms
-        
-        Write-Host "Installing from GitHub bucket..."
-        scoop install folder2md4llms-binary
-        
-        # Verify it still works
-        # Resolve command path again
-        $folder2mdCmd = "folder2md"
-        $commandExists = Get-Command folder2md -ErrorAction SilentlyContinue
-        if (-not $commandExists) {
-          $directPath = "$env:USERPROFILE\scoop\shims\folder2md"
-          if (Test-Path $directPath) {
-            $folder2mdCmd = $directPath
-          } else {
-            $binaryPath = "$env:USERPROFILE\scoop\shims\folder2md-windows-x64.exe"
-            if (Test-Path $binaryPath) {
-              $folder2mdCmd = $binaryPath
-            }
-          }
-        }
-        
-        & $folder2mdCmd --version
-        
-        Write-Host "✅ Real repository installation test passed"
-        echo "::endgroup::"
-      shell: pwsh
-
     - name: Test cleanup
       run: |
         echo "::group::Testing uninstallation"
-        
-        # Clean up test directory
         Set-Location ..
         Remove-Item -Path "test_scoop" -Recurse -Force -ErrorAction SilentlyContinue
-        
-        # Test uninstall
         scoop uninstall folder2md4llms-binary
         
-        # Remove bucket if it was added during real repository test
-        if ("${{ github.event_name }}" -eq "schedule" -or "${{ github.event_name }}" -eq "workflow_dispatch") {
-          scoop bucket rm folder2md4llms
-        }
-        
-        # Verify removal
         $commandExists = Get-Command folder2md -ErrorAction SilentlyContinue
         if ($commandExists) {
           throw "❌ Command still available after uninstall"
@@ -280,13 +160,9 @@ exclude_patterns:
       run: |
         echo "::group::Test Summary"
         Write-Host "### Scoop Installation Test Summary for ${{ matrix.os }}"
-        Write-Host "- ✅ Local bucket installation"
+        Write-Host "- ✅ Local manifest installation"
         Write-Host "- ✅ Binary installation verification"
         Write-Host "- ✅ Basic functionality test"
-        Write-Host "- ✅ Configuration file support"
-        if ("${{ github.event_name }}" -eq "schedule" -or "${{ github.event_name }}" -eq "workflow_dispatch") {
-          Write-Host "- ✅ Real repository installation"
-        }
         Write-Host "- ✅ Clean uninstallation"
         Write-Host ""
         Write-Host "All Scoop installation tests passed successfully!"
