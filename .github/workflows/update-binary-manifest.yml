@@ -55,9 +55,51 @@ jobs:
           Write-Host "Using dispatch version: $latestVersion"
         } else {
           Write-Host "Checking GitHub releases for latest binary..."
-          $releaseData = Invoke-RestMethod -Uri "https://api.github.com/repos/HenriquesLab/folder2md4llms/releases/latest"
+          
+          # Retry logic for GitHub API with exponential backoff
+          $maxAttempts = 5
+          $attempt = 1
+          $releaseData = $null
+          
+          while ($attempt -le $maxAttempts) {
+            Write-Host "Attempt $attempt of $maxAttempts to fetch latest release..."
+            
+            try {
+              $releaseData = Invoke-RestMethod -Uri "https://api.github.com/repos/HenriquesLab/folder2md4llms/releases/latest" -TimeoutSec 60
+              Write-Host "Successfully fetched release information"
+              break
+            } catch {
+              Write-Host "API request failed on attempt $attempt : $($_.Exception.Message)"
+              
+              if ($attempt -eq $maxAttempts) {
+                Write-Host "All attempts failed to fetch release information, skipping update"
+                echo "needs-update=false" >> $env:GITHUB_OUTPUT
+                exit 0
+              }
+              
+              # Exponential backoff: 5, 10, 20, 30 seconds
+              $waitTime = [Math]::Min(5 * $attempt, 30)
+              Write-Host "Waiting $waitTime seconds before retry..."
+              Start-Sleep -Seconds $waitTime
+              $attempt++
+            }
+          }
+          
+          if ($null -eq $releaseData) {
+            Write-Host "Failed to get release data after all attempts, skipping update"
+            echo "needs-update=false" >> $env:GITHUB_OUTPUT
+            exit 0
+          }
+          
           $latestVersion = $releaseData.tag_name -replace '^v', ''
           Write-Host "Latest GitHub release version: $latestVersion"
+          
+          # Validate the version is not null or empty
+          if ([string]::IsNullOrEmpty($latestVersion) -or $latestVersion -eq "null") {
+            Write-Host "Invalid version from GitHub releases, skipping update"
+            echo "needs-update=false" >> $env:GITHUB_OUTPUT
+            exit 0
+          }
           
           # Check if the binary exists in the release
           $binaryExists = $false
