@@ -206,12 +206,13 @@ jobs:
         $manifest = Get-Content "bucket/folder2md4llms-binary.json" | ConvertFrom-Json
         Write-Host "✅ JSON syntax validation passed"
         
-        # Add current directory as a test bucket
-        scoop bucket add test-binary-bucket .
+        # Test manifest directly without adding as bucket
+        # scoop bucket add test-binary-bucket .
         
-        # Test binary installation
+        # Test binary installation directly from manifest
         Write-Host "Testing binary installation..."
-        scoop install test-binary-bucket/folder2md4llms-binary
+        $manifestPath = Join-Path (Get-Location) "bucket\folder2md4llms-binary.json"
+        scoop install $manifestPath
         
         # Test basic functionality
         folder2md --version
@@ -234,7 +235,6 @@ jobs:
         # Clean up test
         Remove-Item "test.md", "test_binary_output.md" -ErrorAction SilentlyContinue
         scoop uninstall folder2md4llms-binary
-        scoop bucket rm test-binary-bucket
         
         Write-Host "✅ Updated binary manifest tests passed"
         echo "::endgroup::"
@@ -319,8 +319,7 @@ jobs:
         Remove-Item "test.md", "test_binary_output.md" -ErrorAction SilentlyContinue
         Remove-Item -Path "temp_binary_check" -Recurse -Force -ErrorAction SilentlyContinue
         
-        # Remove test bucket and uninstall if needed
-        scoop bucket rm test-binary-bucket -ErrorAction SilentlyContinue
+        # Uninstall if needed
         scoop uninstall folder2md4llms-binary -ErrorAction SilentlyContinue
         
         echo "::endgroup::"
