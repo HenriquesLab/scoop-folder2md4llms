@@ -1,8 +1,9 @@
 # Scoop Bucket for folder2md4llms
 
-[![CI](https://github.com/HenriquesLab/scoop-folder2md4llms/actions/workflows/ci.yml/badge.svg)](https://github.com/HenriquesLab/scoop-folder2md4llms/actions/workflows/ci.yml)
-[![Excavator](https://github.com/HenriquesLab/scoop-folder2md4llms/actions/workflows/excavator.yml/badge.svg)](https://github.com/HenriquesLab/scoop-folder2md4llms/actions/workflows/excavator.yml)
+[![Update Binary Manifest](https://github.com/HenriquesLab/scoop-folder2md4llms/actions/workflows/update-binary-manifest.yml/badge.svg)](https://github.com/HenriquesLab/scoop-folder2md4llms/actions/workflows/update-binary-manifest.yml)
+[![Test Manifest](https://github.com/HenriquesLab/scoop-folder2md4llms/actions/workflows/test-manifest.yml/badge.svg)](https://github.com/HenriquesLab/scoop-folder2md4llms/actions/workflows/test-manifest.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Windows](https://img.shields.io/badge/Windows-10%2F11-blue.svg)](https://github.com/HenriquesLab/scoop-folder2md4llms)
 
 A [Scoop](https://scoop.sh/) bucket for easy Windows installation of [folder2md4llms](https://github.com/henriqueslab/folder2md4llms) binary - a powerful standalone tool that converts repository contents into LLM-friendly Markdown files.
 
@@ -34,7 +35,7 @@ A [Scoop](https://scoop.sh/) bucket for easy Windows installation of [folder2md4
 
 ### Usage
 
-After installation, you can use `folder2md4llms` directly from any command prompt:
+After installation, you can use `folder2md` directly from any command prompt:
 
 ```powershell
 # Process current directory
@@ -57,8 +58,8 @@ folder2md --help
 
 This Scoop bucket provides:
 
-- **folder2md4llms-binary** - Standalone executable with no dependencies
-- **Automatic updates** - Excavator workflow keeps the package current
+- **folder2md4llms-binary** - Standalone executable with no dependencies (command: `folder2md`)
+- **Automatic updates** - GitHub Actions workflow keeps the package current
 - **Comprehensive testing** - CI workflows ensure reliability
 - **Issue automation** - Intelligent issue handling and support
 
@@ -85,7 +86,7 @@ The installed binary is completely standalone:
 # Use the installed executable directly
 folder2md --help
 
-# No Python module access needed - it's a standalone binary
+# Binary provides the 'folder2md' command - no Python needed
 folder2md . --output output.md
 ```
 
@@ -104,24 +105,25 @@ scoop status
 
 ## 🤖 Automation Features
 
-### Automatic Updates (Excavator)
+### Automatic Updates
 
 This bucket includes an automated update system that:
 
-- ✅ Runs every 4 hours
-- ✅ Checks PyPI for new versions
-- ✅ Updates manifests automatically
+- ✅ Monitors GitHub releases automatically
+- ✅ Updates manifests when new binaries are released
+- ✅ Verifies binary integrity with SHA256 checks
 - ✅ Creates pull requests for review
-- ✅ Tests updated packages
+- ✅ Tests updated packages thoroughly
 
 ### Continuous Integration
 
-Every change is automatically tested on:
+Every change is automatically tested with:
 
-- ✅ Windows 2019, 2022, and latest
+- ✅ Multiple Windows versions (2022, latest)
+- ✅ Multiple Python versions (3.11, 3.12, 3.13)
 - ✅ Binary installation and uninstallation
-- ✅ Basic functionality testing
-- ✅ Manifest validation
+- ✅ Comprehensive functionality testing
+- ✅ Manifest JSON validation
 - ✅ Standalone executable verification
 
 ### Issue Management
@@ -254,18 +256,18 @@ To add new packages to this bucket:
 - **Total Packages**: 1 (binary only)
 - **Supported Platforms**: Windows 10/11, Server 2016+
 - **Python Versions**: Not applicable - standalone binary
-- **Update Frequency**: Every 4 hours
+- **Update Frequency**: Automatic on new releases
 - **Test Coverage**: 100% (installation, functionality, uninstallation)
 
 ## 🔄 Maintenance
 
 This bucket is actively maintained with:
 
-- **Automated updates** via Excavator
-- **Continuous testing** on multiple Windows versions
+- **Automated updates** from GitHub releases
+- **Continuous testing** on multiple Windows versions and Python versions
 - **Issue tracking** and resolution
-- **Security monitoring**
-- **Performance optimization**
+- **Security monitoring** and binary verification
+- **Performance optimization** and reliability improvements
 
 ## 📜 License
 
